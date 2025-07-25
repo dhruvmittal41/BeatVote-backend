@@ -99,7 +99,7 @@ io.on('connection', (socket) => {
 
 
 app.use(cors({
-  origin: ['https://beat-vote-frontend.vercel.app/'], // your frontend domain
+  origin: ['https://beat-vote-frontend.vercel.app'], // your frontend domain
   credentials: true,
 }));
 
