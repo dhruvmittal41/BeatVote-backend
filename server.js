@@ -11,13 +11,14 @@ connectDB();
 
 const app = express();
 const server = http.createServer(app);
+
 const io = socketIO(server, {
   cors: {
-    origin: '*',
+    origin: 'https://beat-vote-frontend.vercel.app',
     methods: ['GET', 'POST'],
-  },
+    credentials: true
+  }
 });
-
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -99,9 +100,12 @@ io.on('connection', (socket) => {
 
 
 app.use(cors({
-  origin: ['https://beat-vote-frontend.vercel.app'], // your frontend domain
-  credentials: true,
+  origin: ['https://beat-vote-frontend.vercel.app'],
+  methods: ['GET', 'POST'],
+  credentials: true
 }));
+
+// ✅ Socket.IO with CORS
 
 
 const PORT = process.env.PORT || 5000;
