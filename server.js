@@ -98,6 +98,12 @@ io.on('connection', (socket) => {
 });
 
 
+app.use(cors({
+  origin: ['https://beat-vote-frontend.vercel.app/'], // your frontend domain
+  credentials: true,
+}));
+
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
