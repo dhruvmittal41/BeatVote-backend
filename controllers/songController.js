@@ -45,25 +45,37 @@ exports.submitSong = async (req, res) => {
 exports.voteSong = async (req, res) => {
   const { songId, username, roomCode } = req.body;
 
+  if (!songId || !username || !roomCode) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
   try {
     const song = await Song.findById(songId);
     if (!song) return res.status(404).json({ error: "Song not found" });
 
-    // Prevent multiple votes from same user
-    if (song.votedUsers.includes(username)) {
-      return res.status(403).json({ error: "User has already voted" });
+    const room = await Room.findOne({ roomCode: roomCode.toUpperCase() });
+    if (!room) return res.status(404).json({ error: "Room not found" });
+
+    // Check if user has already voted in this round
+    if (room.votedUsers.includes(username)) {
+      return res.status(400).json({ error: "User has already voted" });
     }
 
-    song.voteCount = (song.voteCount || 0) + 1;
-    song.votedUsers.push(username);
-
+    // Count vote
+    song.voteCount += 1;
     await song.save();
-    res.json({ song });
+
+    // Track user vote in room
+    room.votedUsers.push(username);
+    await room.save();
+
+    res.status(200).json({ message: "Vote registered", song });
   } catch (err) {
-    console.error("Vote error:", err.message);
-    res.status(500).json({ error: "Server error" });
+    console.error("Vote error:", err);
+    res.status(500).json({ error: "Server error during voting" });
   }
 };
+
 
 
 // @desc    Finalize song with highest votes
@@ -112,5 +124,19 @@ exports.finalizeSong = async (req, res) => {
   } catch (err) {
     console.error('Error finalizing song:', err.message);
     return res.status(500).json({ message: 'Server error while finalizing vote' });
+  }
+};
+
+
+
+// GET /api/songs/room/:roomCode
+exports.getSongsByRoom = async (req, res) => {
+  try {
+    const room = await Room.findOne({ roomCode: req.params.roomCode.toUpperCase() }).populate('playlist');
+    if (!room) return res.status(404).json({ message: 'Room not found' });
+    res.json({ songs: room.playlist });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch songs' });
   }
 };
