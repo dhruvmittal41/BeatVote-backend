@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
@@ -12,6 +11,15 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
+// ✅ Apply CORS middleware early and only once
+app.use(cors({
+  origin: 'https://beat-vote-frontend.vercel.app',
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
+app.use(express.json());
+
+// ✅ Socket.IO setup with CORS
 const io = socketIO(server, {
   cors: {
     origin: 'https://beat-vote-frontend.vercel.app',
@@ -19,18 +27,18 @@ const io = socketIO(server, {
     credentials: true
   }
 });
-// Middleware
-app.use(cors());
-app.use(express.json());
 
-// Routes (to be added)
+// ✅ Routes
 app.use('/api/rooms', require('./routes/roomRoutes'));
 app.use('/api/songs', require('./routes/songRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 
+// ✅ Test route for Railway status check
+app.get('/', (req, res) => {
+  res.send('BeatVote Backend is running');
+});
 
-// Socket.IO basic setup
-// Track users per room
+// ✅ Socket.IO event logic
 const roomUserMap = {};
 
 io.on('connection', (socket) => {
@@ -40,11 +48,9 @@ io.on('connection', (socket) => {
     socket.join(roomCode);
     console.log(`Client ${socket.id} joined room ${roomCode}`);
 
-    // Track user in room
     roomUserMap[roomCode] = roomUserMap[roomCode] || new Set();
     roomUserMap[roomCode].add(socket.id);
 
-    // Broadcast updated count
     io.to(roomCode).emit('userCountUpdate', roomUserMap[roomCode].size);
   });
 
@@ -75,12 +81,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('userJoined', ({ roomCode, username }) => {
-  socket.to(roomCode).emit('userJoined', { username });
-});
-
+    socket.to(roomCode).emit('userJoined', { username });
+  });
 
   socket.on('disconnecting', () => {
-    // Leave all rooms cleanly
     for (const roomCode of socket.rooms) {
       if (roomCode !== socket.id && roomUserMap[roomCode]) {
         roomUserMap[roomCode].delete(socket.id);
@@ -98,16 +102,7 @@ io.on('connection', (socket) => {
   });
 });
 
-
-app.use(cors({
-  origin: ['https://beat-vote-frontend.vercel.app'],
-  methods: ['GET', 'POST'],
-  credentials: true
-}));
-
-// ✅ Socket.IO with CORS
-
-
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
