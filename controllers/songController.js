@@ -43,31 +43,28 @@ exports.submitSong = async (req, res) => {
 // @desc    Vote for a song
 // @route   POST /api/songs/vote
 exports.voteSong = async (req, res) => {
+  const { songId, username, roomCode } = req.body;
+
   try {
-    const { songId } = req.body;
-
-    if (!songId) {
-      return res.status(400).json({ message: 'songId is required' });
-    }
-
     const song = await Song.findById(songId);
+    if (!song) return res.status(404).json({ error: "Song not found" });
 
-    if (!song) {
-      return res.status(404).json({ message: 'Song not found' });
+    // Prevent multiple votes from same user
+    if (song.votedUsers.includes(username)) {
+      return res.status(403).json({ error: "User has already voted" });
     }
 
-    song.voteCount += 1;
-    await song.save();
+    song.voteCount = (song.voteCount || 0) + 1;
+    song.votedUsers.push(username);
 
-    return res.status(200).json({
-      message: 'Vote counted',
-      song,
-    });
+    await song.save();
+    res.json({ song });
   } catch (err) {
-    console.error('Error voting for song:', err.message);
-    return res.status(500).json({ message: 'Server error while voting' });
+    console.error("Vote error:", err.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
+
 
 // @desc    Finalize song with highest votes
 // @route   POST /api/songs/finalize
@@ -93,8 +90,20 @@ exports.finalizeSong = async (req, res) => {
       }
     }
 
+    // Save the winning song reference to room
     room.finalizedSong = winningSong._id;
     await room.save();
+
+    // Reset voteCount and votedUsers for next round
+    const resetPromises = room.playlist.map(song =>
+      Song.findByIdAndUpdate(song._id, {
+        $set: {
+          voteCount: 0,
+          votedUsers: [],
+        },
+      })
+    );
+    await Promise.all(resetPromises);
 
     return res.status(200).json({
       message: 'Winning song finalized',
