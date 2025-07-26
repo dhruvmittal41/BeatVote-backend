@@ -85,9 +85,15 @@ io.on('connection', (socket) => {
   });
 
  // server-side
-socket.on("voteStarted", ({ roomCode }) => {
-  io.to(roomCode).emit("voteStarted");
+socket.on("voteStarted", async ({ roomCode }) => {
+  const room = await Room.findOne({ roomCode });
+  if (room) {
+    room.votedUsers = []; // Reset votes
+    await room.save();
+    io.to(roomCode).emit("voteStarted");
+  }
 });
+
 
 
   socket.on('disconnecting', () => {
