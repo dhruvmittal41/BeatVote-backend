@@ -4,6 +4,7 @@ const socketIO = require('socket.io');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const Room = require('./models/Room'); 
 
 dotenv.config();
 connectDB();
