@@ -84,6 +84,12 @@ io.on('connection', (socket) => {
     socket.to(roomCode).emit('userJoined', { username });
   });
 
+ // server-side
+socket.on("voteStarted", ({ roomCode }) => {
+  io.to(roomCode).emit("voteStarted");
+});
+
+
   socket.on('disconnecting', () => {
     for (const roomCode of socket.rooms) {
       if (roomCode !== socket.id && roomUserMap[roomCode]) {
