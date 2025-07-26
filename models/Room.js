@@ -38,6 +38,10 @@ const RoomSchema = new mongoose.Schema({
       },
     },
   ],
+  votedUsers: {
+  type: [String],
+  default: [],
+},
 });
 
 module.exports = mongoose.model('Room', RoomSchema);

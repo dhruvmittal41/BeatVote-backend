@@ -28,10 +28,10 @@ const SongSchema = new mongoose.Schema({
     ref: 'Room',
     required: true,
   },
-    votedUsers: {
-    type: [String], // Array of usernames
-    default: [],
-  },
+   votedUsers: {
+  type: [String],
+  default: [],
+},
 });
 
 module.exports = mongoose.model('Song', SongSchema);
